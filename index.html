@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>Charity Bin Sim</title>
     <meta name="description" content="Roll coins into a charity spiral wishing well and watch them speed up as they circle down to the hole." />
@@ -45,9 +45,16 @@
           <p class="formula">z = −A / √(r² + ε²)</p>
         </div>
 
-        <aside class="panel" id="panel">
-          <button class="panel-toggle" id="panel-toggle" type="button" aria-expanded="true">Controls</button>
-          <div class="panel-body">
+        <aside class="panel collapsed" id="panel">
+          <div class="drawer-head" id="drawer-head">
+            <button class="grabber" id="panel-toggle" type="button" aria-expanded="false" aria-controls="panel-body" aria-label="Show all controls"><span></span></button>
+            <div class="quick">
+              <button type="button" class="primary" id="quick-drop">Drop <span id="quick-coin"></span></button>
+              <button type="button" id="quick-pump">Hold to pump</button>
+              <button type="button" id="quick-auto" aria-pressed="false">Auto-feed</button>
+            </div>
+          </div>
+          <div class="panel-body" id="panel-body">
             <section>
               <h2>Coin <span class="key">1-8</span></h2>
               <div class="coin-grid" id="coin-grid"></div>

@@ -272,7 +272,7 @@ export function createBin(canvas: HTMLCanvasElement) {
     renderer.setSize(w, h, false)
     camera.aspect = w / h
     // Keep the whole funnel in frame on tall, narrow screens.
-    camera.zoom = Math.min(1, camera.aspect / 1.15)
+    camera.zoom = Math.min(1, camera.aspect / 1.3)
     camera.updateProjectionMatrix()
   }
 

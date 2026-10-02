@@ -356,6 +356,7 @@ function selectCoin(i: number) {
   settings.coin = i
   ;[...coinGrid.children].forEach((b, k) => b.classList.toggle("active", k === i))
   const s = coins[i]
+  syncQuickCoin()
   $("coin-spec").textContent = `${s.name} · ${(s.diameter * 10).toFixed(1)} mm · ${s.mass.toFixed(2)} g · ${(s.thickness * 10).toFixed(2)} mm thick · ${metalNames[s.metal]}`
   guideDirty = true
 }
@@ -409,8 +410,17 @@ function toggle(id: string, apply: (on: boolean) => void) {
   apply(input.checked)
   return input
 }
-toggle("mixed", (on) => (settings.mixed = on))
-const autoInput = toggle("auto", (on) => (settings.auto = on))
+function syncQuickCoin() {
+  $("quick-coin").textContent = settings.mixed ? "mixed" : coins[settings.coin].name
+}
+toggle("mixed", (on) => {
+  settings.mixed = on
+  syncQuickCoin()
+})
+const autoInput = toggle("auto", (on) => {
+  settings.auto = on
+  $("quick-auto").setAttribute("aria-pressed", String(on))
+})
 const guidesInput = toggle("guides", (on) => {
   settings.guides = on
   guideDirty = true
@@ -425,22 +435,29 @@ toggle("sound", (on) => {
 })
 
 $("drop").addEventListener("click", () => dropFromChute())
+$("quick-drop").addEventListener("click", () => dropFromChute())
+$("quick-auto").addEventListener("click", () => {
+  autoInput.checked = !autoInput.checked
+  autoInput.dispatchEvent(new Event("change"))
+})
 let pumpHeld = false
 let pumpClock = 0
-const pump = $("pump")
-const stopPump = () => {
-  pumpHeld = false
-  pump.classList.remove("held")
+for (const pump of [$("pump"), $("quick-pump")]) {
+  const stopPump = () => {
+    pumpHeld = false
+    pump.classList.remove("held")
+  }
+  pump.addEventListener("pointerdown", (e) => {
+    e.preventDefault()
+    pumpHeld = true
+    pumpClock = Infinity
+    pump.classList.add("held")
+  })
+  pump.addEventListener("pointerup", stopPump)
+  pump.addEventListener("pointerleave", stopPump)
+  pump.addEventListener("pointercancel", stopPump)
+  pump.addEventListener("contextmenu", (e) => e.preventDefault())
 }
-pump.addEventListener("pointerdown", (e) => {
-  e.preventDefault()
-  pumpHeld = true
-  pumpClock = Infinity
-  pump.classList.add("held")
-})
-pump.addEventListener("pointerup", stopPump)
-pump.addEventListener("pointerleave", stopPump)
-pump.addEventListener("pointercancel", stopPump)
 const pauseButton = $("pause")
 function togglePause() {
   settings.paused = !settings.paused
@@ -465,12 +482,60 @@ $("clear").addEventListener("click", () => {
   $("record").textContent = ""
 })
 
+// On narrow screens the panel is a bottom drawer that peeks its quick actions.
 const panel = $("panel")
-$("panel-toggle").addEventListener("click", () => {
-  const collapsed = panel.classList.toggle("collapsed")
-  $("panel-toggle").setAttribute("aria-expanded", String(!collapsed))
-  requestAnimationFrame(bin.resize)
+const panelBody = $("panel-body")
+const grabber = $("panel-toggle")
+const drawerQuery = matchMedia("(max-width: 860px)")
+function peekHeight() {
+  return $("drawer-head").offsetHeight + parseFloat(getComputedStyle(panel).paddingBottom)
+}
+function setDrawer(open: boolean) {
+  panel.classList.toggle("collapsed", !open)
+  grabber.setAttribute("aria-expanded", String(open))
+  grabber.setAttribute("aria-label", open ? "Hide controls" : "Show all controls")
+  panelBody.inert = drawerQuery.matches && !open
+}
+function syncDrawer() {
+  document.documentElement.style.setProperty("--peek", `${peekHeight()}px`)
+  setDrawer(!panel.classList.contains("collapsed"))
+}
+drawerQuery.addEventListener("change", syncDrawer)
+window.addEventListener("resize", syncDrawer)
+syncDrawer()
+let drag: { id: number; y: number; time: number; from: number; offset: number; moved: boolean } | null = null
+grabber.addEventListener("pointerdown", (e) => {
+  const closed = panel.offsetHeight - peekHeight()
+  drag = { id: e.pointerId, y: e.clientY, time: e.timeStamp, from: panel.classList.contains("collapsed") ? closed : 0, offset: 0, moved: false }
+  drag.offset = drag.from
+  grabber.setPointerCapture(e.pointerId)
 })
+grabber.addEventListener("pointermove", (e) => {
+  if (!drag || e.pointerId !== drag.id) return
+  const dy = e.clientY - drag.y
+  if (Math.abs(dy) > 5) drag.moved = true
+  if (!drag.moved) return
+  drag.offset = Math.min(Math.max(drag.from + dy, 0), panel.offsetHeight - peekHeight())
+  panel.style.transition = "none"
+  panel.style.transform = `translateY(${drag.offset}px)`
+})
+function endDrag(e: PointerEvent) {
+  if (!drag || e.pointerId !== drag.id) return
+  const { moved, offset, y, time } = drag
+  drag = null
+  panel.style.transition = ""
+  panel.style.transform = ""
+  if (!moved) return setDrawer(panel.classList.contains("collapsed"))
+  // A quick flick wins over where the drawer was let go.
+  const velocity = (e.clientY - y) / Math.max(1, e.timeStamp - time)
+  const closed = panel.offsetHeight - peekHeight()
+  setDrawer(Math.abs(velocity) > 0.5 ? velocity < 0 : offset < closed / 2)
+}
+grabber.addEventListener("pointerup", endDrag)
+grabber.addEventListener("click", (e) => {
+  if (e.detail === 0) setDrawer(panel.classList.contains("collapsed"))
+})
+grabber.addEventListener("pointercancel", endDrag)
 
 let lastSpace = 0
 window.addEventListener("keydown", (e) => {
@@ -490,6 +555,7 @@ window.addEventListener("keydown", (e) => {
     guidesInput.checked = !guidesInput.checked
     guidesInput.dispatchEvent(new Event("change"))
   } else if (e.code === "KeyP") togglePause()
+  else if (e.code === "Escape" && drawerQuery.matches) setDrawer(false)
 })
 window.addEventListener("keyup", (e) => {
   if (e.code === "Space") e.preventDefault()
