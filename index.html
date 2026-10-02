@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Charity Bin Sim</title>
+    <meta name="description" content="Roll coins into a charity spiral wishing well and watch them speed up as they circle down to the hole." />
+  </head>
+  <body>
+    <div class="app">
+      <header class="bar">
+        <div class="brand">
+          <span class="number">26</span>
+          <div>
+            <h1>Charity bin</h1>
+            <p>Roll a coin in along the rim and it spirals down, faster every lap, until it drops.</p>
+          </div>
+        </div>
+        <div class="bar-actions">
+          <a class="credit" href="https://github.com/mnove/kinetic" target="_blank" rel="noreferrer">Built on Kinetic's gravity well</a>
+          <button class="icon-button" id="theme" type="button" aria-label="Toggle dark mode">◐</button>
+        </div>
+      </header>
+
+      <main class="stage">
+        <div class="viewport" id="viewport">
+          <canvas id="scene" aria-label="A 3D coin spiral funnel. Coins roll around it and drop into the hole."></canvas>
+
+          <section class="stats" aria-live="polite">
+            <div class="stat-row">
+              <div class="stat"><span class="label">Raised</span><span class="value" id="raised">£0.00</span></div>
+              <div class="stat"><span class="label">In play</span><span class="value" id="in-play">0</span></div>
+              <div class="stat"><span class="label">Dropped</span><span class="value" id="dropped">0</span></div>
+            </div>
+            <div class="live" id="live">No coins rolling</div>
+            <ol class="results" id="results"></ol>
+            <div class="record" id="record"></div>
+          </section>
+
+          <p class="hint" id="hint">Drag on the funnel to flick a coin in. Tap the funnel to drop one there. Drag off the funnel to orbit.</p>
+          <p class="formula">z = −A / √(r² + ε²)</p>
+        </div>
+
+        <aside class="panel" id="panel">
+          <button class="panel-toggle" id="panel-toggle" type="button" aria-expanded="true">Controls</button>
+          <div class="panel-body">
+            <section>
+              <h2>Coin <span class="key">1-8</span></h2>
+              <div class="coin-grid" id="coin-grid"></div>
+              <label class="switch-row"><input type="checkbox" id="mixed" /> <span>Mixed bag (random coin each drop)</span></label>
+              <p class="spec" id="coin-spec"></p>
+            </section>
+
+            <section>
+              <h2>Entry</h2>
+              <div class="segmented" id="chutes"></div>
+              <div class="segmented two" id="direction">
+                <button type="button" data-dir="-1" class="active">Anticlockwise</button>
+                <button type="button" data-dir="1">Clockwise</button>
+              </div>
+              <label class="slider">
+                <span>Launch speed <output id="speed-out"></output></span>
+                <input type="range" id="speed" min="4" max="120" step="1" value="48" />
+              </label>
+              <label class="slider">
+                <span>Aim off the rim <output id="aim-out"></output></span>
+                <input type="range" id="aim" min="-10" max="80" step="1" value="0" />
+              </label>
+              <p class="prediction" id="prediction"></p>
+            </section>
+
+            <section>
+              <h2>Feed</h2>
+              <div class="actions">
+                <button type="button" class="primary" id="drop">Drop coin <span class="key">Space</span></button>
+                <button type="button" id="pump">Hold to pump</button>
+              </div>
+              <label class="switch-row"><input type="checkbox" id="auto" /> <span>Auto-feed from every chute <span class="key">A</span></span></label>
+              <label class="slider">
+                <span>Feed rate <output id="rate-out"></output></span>
+                <input type="range" id="rate" min="0.3" max="6" step="0.1" value="1.5" />
+              </label>
+            </section>
+
+            <section>
+              <h2>Simulation</h2>
+              <label class="slider">
+                <span>Time <output id="time-out"></output></span>
+                <input type="range" id="time" min="0.1" max="4" step="0.05" value="1" />
+              </label>
+              <label class="switch-row"><input type="checkbox" id="guides" checked /> <span>Guides (predicted path)</span></label>
+              <label class="switch-row"><input type="checkbox" id="trails" checked /> <span>Trails</span></label>
+              <label class="switch-row"><input type="checkbox" id="sound" checked /> <span>Sound</span></label>
+              <div class="actions">
+                <button type="button" id="pause">Pause</button>
+                <button type="button" id="clear">Empty the bin</button>
+              </div>
+            </section>
+          </div>
+        </aside>
+      </main>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
